@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RawBin - Professional Text & JSON Hosting</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-analytics.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #7209b7;
+            --success: #4cc9f0;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --border: #e1e5e9;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header Styles */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            font-size: 2.5rem;
+            color: var(--primary);
+        }
+
+        .logo-text h1 {
+            font-size: 2rem;
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+
+        .logo-text p {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--gray);
+            font-weight: 500;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        /* Main App Layout */
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 968px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+            
+            header {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+        }
+
+        /* Card Styles */
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: var(--shadow-lg);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            color: var(--primary);
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 300px;
+            padding: 15px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s;
+            line-height: 1.5;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        }
+
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 14px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-secondary {
+            background: var(--light);
+            color: var(--dark);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #3ab0d5;
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Result Container */
+        .result-container {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+            display: none;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .result-title {
+            font-size: 1.2rem;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .url-display {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin: 15px 0;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            position: relative;
+            padding-right: 120px;
+        }
+
+        .copy-btn {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Recent Pastes */
+        .recent-pastes {
+            margin-top: 20px;
+        }
+
+        .paste-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .paste-item:hover {
+            transform: translateX(5px);
+            box-shadow: var(--shadow);
+        }
+
+        .paste-info {
+            flex: 1;
+        }
+
+        .paste-meta {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        .paste-type {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .paste-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            font-size: 1rem;
+            transition: color 0.3s;
+        }
+
+        .action-btn:hover {
+            color: var(--primary);
+        }
+
+        /* Features Section */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin: 40px 0;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+
+        .feature-card h3 {
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+
+        .feature-card p {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        /* Stats Section */
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 40px 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        /* Footer */
+        footer {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 50px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--gray);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        .copyright {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--dark);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--gray);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-paste"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>RawBin</h1>
+                    <p>Professional Text & JSON Hosting</p>
+                </div>
+            </div>
+            <div class="nav-links">
+                <a href="#"><i class="fas fa-home"></i> Home</a>
+                <a href="#"><i class="fas fa-history"></i> History</a>
+                <a href="#"><i class="fas fa-star"></i> Features</a>
+                <a href="#"><i class="fas fa-question-circle"></i> Help</a>
+            </div>
+        </header>
+
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalPastes">0</div>
+                <div class="stat-label">Total Pastes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="todayPastes">0</div>
+                <div class="stat-label">Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="activeUsers">0</div>
+                <div class="stat-label">Active Users</div>
+            </div>
+        </div>
+
+        <!-- Main App -->
+        <div class="app-container">
+            <!-- Create Paste Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-plus-circle"></i> Create New Paste</h2>
+                </div>
+                <div class="form-group">
+                    <label for="pasteTitle">Title (Optional):</label>
+                    <input type="text" id="pasteTitle" class="form-control" placeholder="My API Response">
+                </div>
+                <div class="form-group">
+                    <label for="contentType">Content Type:</label>
+                    <select id="contentType">
+                        <option value="text">Plain Text</option>
+                        <option value="json">JSON</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="html">HTML</option>
+                        <option value="css">CSS</option>
+                        <option value="xml">XML</option>
+                        <option value="markdown">Markdown</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="pasteContent">Content:</label>
+                    <textarea id="pasteContent" placeholder="Paste your text, code, or JSON here..."></textarea>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-primary btn-full" onclick="createPaste()">
+                        <i class="fas fa-bolt"></i> Generate Raw URL
+                    </button>
+                </div>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Creating your paste...</p>
+                </div>
+                
+                <div class="result-container" id="resultContainer">
+                    <div class="result-header">
+                        <h3 class="result-title"><i class="fas fa-check-circle"></i> Your Raw URL is Ready!</h3>
+                    </div>
+                    <p>Use this URL to access your content directly:</p>
+                    <div class="url-display">
+                        <span id="rawUrl"></span>
+                        <button class="btn btn-success copy-btn" onclick="copyUrl()">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" onclick="testRawUrl()">
+                            <i class="fas fa-external-link-alt"></i> Test URL
+                        </button>
+                        <button class="btn btn-secondary" onclick="createNewPaste()">
+                            <i class="fas fa-plus"></i> Create Another
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Pastes Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-history"></i> Recent Pastes</h2>
+                    <button class="btn btn-secondary" onclick="clearRecentPastes()">
+                        <i class="fas fa-trash"></i> Clear
+                    </button>
+                </div>
+                <div id="recentPastes" class="recent-pastes">
+                    <div class="empty-state">
+                        <i class="fas fa-paste"></i>
+                        <h3>No recent pastes</h3>
+                        <p>Your recently created pastes will appear here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-link"></i>
+                </div>
+                <h3>Raw URLs</h3>
+                <p>Get direct raw URLs for your text and JSON files with proper content types</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <h3>Fast & Free</h3>
+                <p>Completely free with fast content delivery powered by Firebase</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <h3>No Registration</h3>
+                <p>Start using immediately without signing up or creating an account</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-code"></i>
+                </div>
+                <h3>API Ready</h3>
+                <p>Use raw URLs in your applications, APIs, and development workflows</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <div class="footer-links">
+                <a href="#"><i class="fas fa-info-circle"></i> About</a>
+                <a href="#"><i class="fas fa-envelope"></i> Contact</a>
+                <a href="#"><i class="fas fa-shield-alt"></i> Privacy</a>
+                <a href="#"><i class="fas fa-file-contract"></i> Terms</a>
+                <a href="#"><i class="fab fa-github"></i> GitHub</a>
+            </div>
+            <div class="copyright">
+                &copy; 2023 RawBin. All rights reserved. Powered by Firebase.
+            </div>
+        </footer>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Operation completed successfully!</span>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAfxyYXOizJgcAPS0gy4cOCM5Et0MZCA1E",
+            authDomain: "aryan-x-offical.firebaseapp.com",
+            databaseURL: "https://aryan-x-offical-default-rtdb.firebaseio.com",
+            projectId: "aryan-x-offical",
+            storageBucket: "aryan-x-offical.firebasestorage.app",
+            messagingSenderId: "238049583208",
+            appId: "1:238049583208:web:542d6462259bee1ba55bdd",
+            measurementId: "G-P4QNZ83BR3"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        // Initialize Analytics
+        firebase.analytics();
+
+        // Main application functionality
+        class RawPaste {
+            constructor() {
+                this.init();
+            }
+
+            init() {
+                this.loadRecentPastes();
+                this.updateStats();
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                // Auto-format JSON when JSON type is selected
+                document.getElementById('contentType').addEventListener('change', (e) => {
+                    if (e.target.value === 'json') {
+                        this.tryFormatJSON();
+                    }
+                });
+
+                // Load recent pastes when page loads
+                window.addEventListener('load', () => this.loadRecentPastes());
+            }
+
+            async createPaste() {
+                const content = document.getElementById('pasteContent').value.trim();
+                const contentType = document.getElementById('contentType').value;
+                const title = document.getElementById('pasteTitle').value.trim() || 'Untitled Paste';
+
+                if (!content) {
+                    this.showToast('Please enter some content', 'error');
+                    return;
+                }
+
+                // Validate JSON if content type is JSON
+                if (contentType === 'json') {
+                    if (!this.isValidJSON(content)) {
+                        this.showToast('Invalid JSON format. Please check your JSON syntax.', 'error');
+                        return;
+                    }
+                }
+
+                this.showLoading(true);
+
+                try {
+                    const pasteId = this.generateId();
+                    const filename = `${pasteId}.${this.getFileExtension(contentType)}`;
+                    
+                    // Create paste document in Firestore
+                    const pasteData = {
+                        id: pasteId,
+                        title: title,
+                        content: content,
+                        contentType: contentType,
+                        filename: filename,
+                        createdAt: new Date(),
+                        size: content.length,
+                        views: 0
+                    };
+
+                    // Store in Firestore
+                    await db.collection('pastes').doc(pasteId).set(pasteData);
+
+                    // Store in localStorage for recent pastes
+                    this.saveToRecent(pasteData);
+
+                    // Generate raw URL
+                    const rawUrl = this.generateRawUrl(pasteId, contentType);
+                    
+                    this.displayResult(rawUrl, pasteId);
+                    this.loadRecentPastes();
+                    this.updateStats();
+
+                    // Log event to analytics
+                    firebase.analytics().logEvent('paste_created', {
+                        content_type: contentType,
+                        content_size: content.length
+                    });
+
+                    this.showToast('Paste created successfully!');
+
+                } catch (error) {
+                    console.error('Error creating paste:', error);
+                    this.showToast('Error creating paste. Please try again.', 'error');
+                } finally {
+                    this.showLoading(false);
+                }
+            }
+
+            generateId() {
+                return Math.random().toString(36).substring(2, 15) + 
+                       Math.random().toString(36).substring(2, 15);
+            }
+
+            getFileExtension(contentType) {
+                const extensions = {
+                    'text': 'txt',
+                    'json': 'json',
+                    'javascript': 'js',
+                    'html': 'html',
+                    'css': 'css',
+                    'xml': 'xml',
+                    'markdown': 'md'
+                };
+                return extensions[contentType] || 'txt';
+            }
+
+            generateRawUrl(pasteId, contentType) {
+                // For GitHub Pages deployment - this would be your actual endpoint
+                // For demo purposes, we'll use a simulated URL
+                const baseUrl = window.location.origin;
+                return `${baseUrl}/raw/${pasteId}.${this.getFileExtension(contentType)}`;
+            }
+
+            displayResult(rawUrl, pasteId) {
+                const resultContainer = document.getElementById('resultContainer');
+                const rawUrlElement = document.getElementById('rawUrl');
+
+                rawUrlElement.textContent = rawUrl;
+                resultContainer.style.display = 'block';
+                resultContainer.scrollIntoView({ behavior: 'smooth' });
+            }
+
+            isValidJSON(str) {
+                try {
+                    JSON.parse(str);
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            tryFormatJSON() {
+                const content = document.getElementById('pasteContent').value;
+                if (this.isValidJSON(content)) {
+                    try {
+                        const parsed = JSON.parse(content);
+                        document.getElementById('pasteContent').value = JSON.stringify(parsed, null, 2);
+                    } catch (e) {
+                        // Ignore formatting errors
+                    }
+                }
+            }
+
+            showLoading(show) {
+                document.getElementById('loading').style.display = show ? 'block' : 'none';
+            }
+
+            saveToRecent(pasteData) {
+                let recent = JSON.parse(localStorage.getItem('recentPastes') || '[]');
+                
+                // Add new paste to beginning
+                recent.unshift({
+                    id: pasteData.id,
+                    title: pasteData.title,
+                    contentType: pasteData.contentType,
+                    content: pasteData.content.substring(0, 100) + (pasteData.content.length > 100 ? '...' : ''),
+                    createdAt: pasteData.createdAt,
+                    size: pasteData.size
+                });
+
+                // Keep only last 10 pastes
+                recent = recent.slice(0, 10);
+                
+                localStorage.setItem('recentPastes', JSON.stringify(recent));
+            }
+
+            loadRecentPastes() {
+                const recentPastes = JSON.parse(localStorage.getItem('recentPastes') || '[]');
+                const container = document.getElementById('recentPastes');
+
+                if (recentPastes.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-paste"></i>
+                            <h3>No recent pastes</h3>
+                            <p>Your recently created pastes will appear here</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = recentPastes.map(paste => `
+                    <div class="paste-item" onclick="loadPaste('${paste.id}')">
+                        <div class="paste-info">
+                            <h4>${paste.title}</h4>
+                            <p>${paste.content}</p>
+                            <div class="paste-meta">
+                                <span class="paste-type">${paste.contentType.toUpperCase()}</span>
+                                <span><i class="far fa-calendar"></i> ${new Date(paste.createdAt).toLocaleDateString()}</span>
+                                <span><i class="far fa-file"></i> ${paste.size} chars</span>
+                            </div>
+                        </div>
+                        <div class="paste-actions">
+                            <button class="action-btn" onclick="event.stopPropagation(); copyPasteContent('${paste.id}')" title="Copy Content">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <button class="action-btn" onclick="event.stopPropagation(); deletePaste('${paste.id}')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            async loadPaste(pasteId) {
+                try {
+                    const doc = await db.collection('pastes').doc(pasteId).get();
+                    if (doc.exists) {
+                        const paste = doc.data();
+                        document.getElementById('pasteContent').value = paste.content;
+                        document.getElementById('contentType').value = paste.contentType;
+                        document.getElementById('pasteTitle').value = paste.title;
+                        
+                        // Scroll to form
+                        document.querySelector('.card').scrollIntoView({ behavior: 'smooth' });
+                        
+                        this.showToast('Paste loaded successfully!');
+                    } else {
+                        this.showToast('Paste not found', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error loading paste:', error);
+                    this.showToast('Error loading paste', 'error');
+                }
+            }
+
+            async deletePaste(pasteId) {
+                if (confirm('Are you sure you want to delete this paste?')) {
+                    try {
+                        // Remove from Firestore
+                        await db.collection('pastes').doc(pasteId).delete();
+                        
+                        // Remove from localStorage
+                        let recent = JSON.parse(localStorage.getItem('recentPastes') || '[]');
+                        recent = recent.filter(paste => paste.id !== pasteId);
+                        localStorage.setItem('recentPastes', JSON.stringify(recent));
+                        
+                        this.loadRecentPastes();
+                        this.updateStats();
+                        this.showToast('Paste deleted successfully!');
+                    } catch (error) {
+                        console.error('Error deleting paste:', error);
+                        this.showToast('Error deleting paste', 'error');
+                    }
+                }
+            }
+
+            copyUrl() {
+                const urlElement = document.getElementById('rawUrl');
+                const textArea = document.createElement('textarea');
+                textArea.value = urlElement.textContent;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                this.showToast('URL copied to clipboard!');
+            }
+
+            async copyPasteContent(pasteId) {
+                try {
+                    const doc = await db.collection('pastes').doc(pasteId).get();
+                    if (doc.exists) {
+                        const paste = doc.data();
+                        const textArea = document.createElement('textarea');
+                        textArea.value = paste.content;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        
+                        this.showToast('Content copied to clipboard!');
+                    }
+                } catch (error) {
+                    console.error('Error copying paste content:', error);
+                    this.showToast('Error copying content', 'error');
+                }
+            }
+
+            clearForm() {
+                document.getElementById('pasteContent').value = '';
+                document.getElementById('contentType').value = 'text';
+                document.getElementById('pasteTitle').value = '';
+                document.getElementById('resultContainer').style.display = 'none';
+            }
+
+            clearRecentPastes() {
+                if (confirm('Are you sure you want to clear all recent pastes?')) {
+                    localStorage.removeItem('recentPastes');
+                    this.loadRecentPastes();
+                    this.showToast('Recent pastes cleared!');
+                }
+            }
+
+            testRawUrl() {
+                const urlElement = document.getElementById('rawUrl');
+                window.open(urlElement.textContent, '_blank');
+            }
+
+            createNewPaste() {
+                this.clearForm();
+                document.getElementById('pasteContent').focus();
+            }
+
+            showToast(message, type = 'success') {
+                const toast = document.getElementById('toast');
+                const toastMessage = document.getElementById('toastMessage');
+                
+                toastMessage.textContent = message;
+                
+                // Set icon based on type
+                const icon = toast.querySelector('i');
+                if (type === 'error') {
+                    icon.className = 'fas fa-exclamation-circle';
+                    toast.style.background = '#dc3545';
+                } else {
+                    icon.className = 'fas fa-check-circle';
+                    toast.style.background = '#28a745';
+                }
+                
+                toast.classList.add('show');
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+
+            async updateStats() {
+                // Simulate stats - in a real app, you'd query Firestore for these
+                const totalPastes = Math.floor(Math.random() * 1000) + 500;
+                const todayPastes = Math.floor(Math.random() * 50) + 10;
+                const activeUsers = Math.floor(Math.random() * 100) + 50;
+                
+                document.getElementById('totalPastes').textContent = totalPastes.toLocaleString();
+                document.getElementById('todayPastes').textContent = todayPastes;
+                document.getElementById('activeUsers').textContent = activeUsers;
+            }
+        }
+
+        // Initialize the application
+        const rawPaste = new RawPaste();
+
+        // Global functions for HTML onclick handlers
+        function createPaste() {
+            rawPaste.createPaste();
+        }
+
+        function copyUrl() {
+            rawPaste.copyUrl();
+        }
+
+        function clearForm() {
+            rawPaste.clearForm();
+        }
+
+        function loadPaste(pasteId) {
+            rawPaste.loadPaste(pasteId);
+        }
+
+        function deletePaste(pasteId) {
+            rawPaste.deletePaste(pasteId);
+        }
+
+        function copyPasteContent(pasteId) {
+            rawPaste.copyPasteContent(pasteId);
+        }
+
+        function clearRecentPastes() {
+            rawPaste.clearRecentPastes();
+        }
+
+        function testRawUrl() {
+            rawPaste.testRawUrl();
+        }
+
+        function createNewPaste() {
+            rawPaste.createNewPaste();
+        }
+    </script>
+</body>
+</html>
