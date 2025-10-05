@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RawBin - Professional Text & JSON Hosting</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-analytics.js"></script>
     <style>
         :root {
             --primary: #4361ee;
@@ -183,7 +180,7 @@
             box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
         }
 
-        select {
+        select, input {
             width: 100%;
             padding: 12px 15px;
             border: 2px solid var(--border);
@@ -194,7 +191,7 @@
             transition: border-color 0.3s;
         }
 
-        select:focus {
+        select:focus, input:focus {
             outline: none;
             border-color: var(--primary);
         }
@@ -259,12 +256,11 @@
             background: #f8f9fa;
             border-radius: 10px;
             border-left: 4px solid var(--primary);
-            display: none;
         }
 
         .result-header {
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
         }
@@ -599,7 +595,7 @@
                     <p>Creating your paste...</p>
                 </div>
                 
-                <div class="result-container" id="resultContainer">
+                <div class="result-container" id="resultContainer" style="display: none;">
                     <div class="result-header">
                         <h3 class="result-title"><i class="fas fa-check-circle"></i> Your Raw URL is Ready!</h3>
                     </div>
@@ -653,7 +649,7 @@
                     <i class="fas fa-bolt"></i>
                 </div>
                 <h3>Fast & Free</h3>
-                <p>Completely free with fast content delivery powered by Firebase</p>
+                <p>Completely free with fast content delivery powered by modern web technologies</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">
@@ -681,7 +677,7 @@
                 <a href="#"><i class="fab fa-github"></i> GitHub</a>
             </div>
             <div class="copyright">
-                &copy; 2023 RawBin. All rights reserved. Powered by Firebase.
+                &copy; 2023 RawBin. All rights reserved. Powered by modern web technologies.
             </div>
         </footer>
     </div>
@@ -693,28 +689,10 @@
     </div>
 
     <script>
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyAfxyYXOizJgcAPS0gy4cOCM5Et0MZCA1E",
-            authDomain: "aryan-x-offical.firebaseapp.com",
-            databaseURL: "https://aryan-x-offical-default-rtdb.firebaseio.com",
-            projectId: "aryan-x-offical",
-            storageBucket: "aryan-x-offical.firebasestorage.app",
-            messagingSenderId: "238049583208",
-            appId: "1:238049583208:web:542d6462259bee1ba55bdd",
-            measurementId: "G-P4QNZ83BR3"
-        };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        
-        // Initialize Analytics
-        firebase.analytics();
-
         // Main application functionality
         class RawPaste {
             constructor() {
+                this.pastes = JSON.parse(localStorage.getItem('rawbin_pastes') || '{}');
                 this.init();
             }
 
@@ -736,7 +714,7 @@
                 window.addEventListener('load', () => this.loadRecentPastes());
             }
 
-            async createPaste() {
+            createPaste() {
                 const content = document.getElementById('pasteContent').value.trim();
                 const contentType = document.getElementById('contentType').value;
                 const title = document.getElementById('pasteTitle').value.trim() || 'Untitled Paste';
@@ -760,20 +738,21 @@
                     const pasteId = this.generateId();
                     const filename = `${pasteId}.${this.getFileExtension(contentType)}`;
                     
-                    // Create paste document in Firestore
+                    // Create paste object
                     const pasteData = {
                         id: pasteId,
                         title: title,
                         content: content,
                         contentType: contentType,
                         filename: filename,
-                        createdAt: new Date(),
+                        createdAt: new Date().toISOString(),
                         size: content.length,
                         views: 0
                     };
 
-                    // Store in Firestore
-                    await db.collection('pastes').doc(pasteId).set(pasteData);
+                    // Store in localStorage
+                    this.pastes[pasteId] = pasteData;
+                    this.savePastes();
 
                     // Store in localStorage for recent pastes
                     this.saveToRecent(pasteData);
@@ -784,12 +763,6 @@
                     this.displayResult(rawUrl, pasteId);
                     this.loadRecentPastes();
                     this.updateStats();
-
-                    // Log event to analytics
-                    firebase.analytics().logEvent('paste_created', {
-                        content_type: contentType,
-                        content_size: content.length
-                    });
 
                     this.showToast('Paste created successfully!');
 
@@ -820,10 +793,25 @@
             }
 
             generateRawUrl(pasteId, contentType) {
-                // For GitHub Pages deployment - this would be your actual endpoint
-                // For demo purposes, we'll use a simulated URL
-                const baseUrl = window.location.origin;
-                return `${baseUrl}/raw/${pasteId}.${this.getFileExtension(contentType)}`;
+                // Create a blob URL for the content
+                const paste = this.pastes[pasteId];
+                if (!paste) return '';
+                
+                const blob = new Blob([paste.content], { type: this.getMimeType(contentType) });
+                return URL.createObjectURL(blob);
+            }
+
+            getMimeType(contentType) {
+                const mimeTypes = {
+                    'text': 'text/plain',
+                    'json': 'application/json',
+                    'javascript': 'application/javascript',
+                    'html': 'text/html',
+                    'css': 'text/css',
+                    'xml': 'application/xml',
+                    'markdown': 'text/markdown'
+                };
+                return mimeTypes[contentType] || 'text/plain';
             }
 
             displayResult(rawUrl, pasteId) {
@@ -917,11 +905,10 @@
                 `).join('');
             }
 
-            async loadPaste(pasteId) {
+            loadPaste(pasteId) {
                 try {
-                    const doc = await db.collection('pastes').doc(pasteId).get();
-                    if (doc.exists) {
-                        const paste = doc.data();
+                    const paste = this.pastes[pasteId];
+                    if (paste) {
                         document.getElementById('pasteContent').value = paste.content;
                         document.getElementById('contentType').value = paste.contentType;
                         document.getElementById('pasteTitle').value = paste.title;
@@ -939,13 +926,14 @@
                 }
             }
 
-            async deletePaste(pasteId) {
+            deletePaste(pasteId) {
                 if (confirm('Are you sure you want to delete this paste?')) {
                     try {
-                        // Remove from Firestore
-                        await db.collection('pastes').doc(pasteId).delete();
+                        // Remove from main storage
+                        delete this.pastes[pasteId];
+                        this.savePastes();
                         
-                        // Remove from localStorage
+                        // Remove from localStorage recent pastes
                         let recent = JSON.parse(localStorage.getItem('recentPastes') || '[]');
                         recent = recent.filter(paste => paste.id !== pasteId);
                         localStorage.setItem('recentPastes', JSON.stringify(recent));
@@ -972,11 +960,10 @@
                 this.showToast('URL copied to clipboard!');
             }
 
-            async copyPasteContent(pasteId) {
+            copyPasteContent(pasteId) {
                 try {
-                    const doc = await db.collection('pastes').doc(pasteId).get();
-                    if (doc.exists) {
-                        const paste = doc.data();
+                    const paste = this.pastes[pasteId];
+                    if (paste) {
                         const textArea = document.createElement('textarea');
                         textArea.value = paste.content;
                         document.body.appendChild(textArea);
@@ -1040,15 +1027,26 @@
                 }, 3000);
             }
 
-            async updateStats() {
-                // Simulate stats - in a real app, you'd query Firestore for these
-                const totalPastes = Math.floor(Math.random() * 1000) + 500;
-                const todayPastes = Math.floor(Math.random() * 50) + 10;
+            updateStats() {
+                // Calculate stats from localStorage
+                const recentPastes = JSON.parse(localStorage.getItem('recentPastes') || '[]');
+                const totalPastes = Object.keys(this.pastes).length;
+                const todayPastes = recentPastes.filter(paste => {
+                    const pasteDate = new Date(paste.createdAt);
+                    const today = new Date();
+                    return pasteDate.toDateString() === today.toDateString();
+                }).length;
+                
+                // Simulate active users
                 const activeUsers = Math.floor(Math.random() * 100) + 50;
                 
                 document.getElementById('totalPastes').textContent = totalPastes.toLocaleString();
                 document.getElementById('todayPastes').textContent = todayPastes;
                 document.getElementById('activeUsers').textContent = activeUsers;
+            }
+
+            savePastes() {
+                localStorage.setItem('rawbin_pastes', JSON.stringify(this.pastes));
             }
         }
 
